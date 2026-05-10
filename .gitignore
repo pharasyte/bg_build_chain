@@ -13,8 +13,8 @@ env/
 ENV/
 
 # Build and packaging artifacts
-build/
-dist/
+/build/
+/dist/
 *.egg-info/
 .eggs/
 
