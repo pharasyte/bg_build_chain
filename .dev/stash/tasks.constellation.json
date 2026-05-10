@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Current Papyrus Project (Constellation)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "$projectDir = '${fileDirname}'; if ([string]::IsNullOrWhiteSpace($projectDir)) { throw 'Open a file inside the target project before running this task.' }; $projectDir = [System.IO.Path]::GetFullPath($projectDir); while ($true) { if (Test-Path (Join-Path $projectDir '.dev/project.json')) { break }; $parent = Split-Path $projectDir -Parent; if ($parent -eq $projectDir -or [string]::IsNullOrWhiteSpace($parent)) { throw ('Could not find .dev/project.json by walking up from {0}.' -f '${fileDirname}') }; $projectDir = $parent }; Set-Location $projectDir; $env:PYTHONPATH = 'f:\\Mod Files\\Starfield\\Projects\\bgBuildChain\\src\\python'; & 'f:\\Mod Files\\Starfield\\Projects\\.venv\\Scripts\\python.exe' -m bgs_tools.constellation --verbose"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
