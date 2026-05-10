@@ -1,0 +1,2 @@
+class BGBCompileError(Exception):
+    pass

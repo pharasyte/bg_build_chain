@@ -14,3 +14,8 @@ DEFAULT_CAPRICA = "F:\\SteamLibrary\\steamapps\\common\\Starfield\\Data\\scripts
 CONFIG_DEFAULTS = {
     "compiler_path": os.path.join(str(LEGACY_BUILD_DIR), "caprica.exe"),
 }
+
+RED = "\033[1;31m"
+GREEN = "\033[1;32m"
+RESET = "\033[0;0m"
+
