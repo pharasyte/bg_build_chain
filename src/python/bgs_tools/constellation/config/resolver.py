@@ -139,7 +139,7 @@ def resolve_config(argv=None):
     if args.save_config:
         save_config(args.config, config)
 
-    verbose = bool(args.verbose)
+    verbose = bool(config.get("verbose", args.verbose))
     if verbose:
         pretty_config = json.dumps(config, indent=4)
         print(f"Using config:\n{pretty_config}")

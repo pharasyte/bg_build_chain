@@ -42,12 +42,15 @@ def preprocess_file(input_path, output_path=None, imports=None):
     return legacy_preprocessor.preprocess_file(target_path, output_path)
 
 
-def preprocess_build_items(build_items, enabled=True, imports=None):
+def preprocess_build_items(build_items, enabled=True, imports=None, collect_metadata=False):
     results = {}
     if not enabled:
         return results
 
     for item in build_items:
-        results[item.staged_path] = preprocess_file(item.staged_path, imports=imports)
+        if collect_metadata:
+            results[item.staged_path] = preprocess_file(item.staged_path, imports=imports)
+        else:
+            results[item.staged_path] = empty_results()
 
     return results

@@ -1,5 +1,4 @@
 import argparse
-import os
 
 from bgs_tools.constellation.config.constants import DEFAULT_CONFIG, DEFAULT_SRCDIR
 
@@ -29,7 +28,7 @@ def build_parser():
     parser.add_argument("--disable-preprocessor", help="Disable the preprocessor", action="store_true", default=False)
     parser.add_argument("--dry-run-level", help="Dry run level", choices=DRY_RUN_LEVELS)
     parser.add_argument("--debug-preprocessor", help="Debug the preprocessor", action="store_true")
-    parser.add_argument("--build-dir", help="Build directory", default=os.path.join(os.getcwd(), "build"))
+    parser.add_argument("--build-dir", help="Build directory")
     parser.add_argument(
         "--config",
         default=DEFAULT_CONFIG,
