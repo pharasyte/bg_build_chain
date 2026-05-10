@@ -70,6 +70,9 @@ def run_debug_preprocessor(build_config):
 
 
 def compile_items(build_items, build_config):
+    staged_import_dir = os.path.join(build_config.build_dir, "src")
+    import_dir = [staged_import_dir] + list(build_config.import_dir)
+
     def mirror_successful_source(item):
         mirror_source(
             item.original_path,
@@ -80,7 +83,7 @@ def compile_items(build_items, build_config):
 
     return compile_build_items(
         build_items,
-        build_config.import_dir,
+        import_dir,
         build_config.output_dir,
         build_config.compiler_path,
         verbose=build_config.verbose,
