@@ -1,6 +1,6 @@
 import os
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -10,6 +10,12 @@ class BuildItem:
     staged_path: str
     source_root: str
     relative_path: str
+    stage_root: str | None = None
+    generated: bool = False
+    parent_original_path: str | None = None
+    emitted_paths: list[str] = field(default_factory=list)
+    transpile_metadata: dict = field(default_factory=dict)
+    source_map_path: str | None = None
 
 
 def prepare_build_dir(build_dir):
@@ -43,6 +49,7 @@ def stage_source_files(files, source_root, build_dir):
                 staged_path=staged_path,
                 source_root=source_root,
                 relative_path=relative_path,
+                stage_root=stage_root,
             )
         )
 

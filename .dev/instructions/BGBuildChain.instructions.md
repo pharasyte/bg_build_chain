@@ -92,9 +92,9 @@ The constellation flow in `src/python/bgs_tools/constellation/main.py` is the ac
 1. Parse CLI arguments and load `.dev/project.json` through `bgs_tools.constellation.config`.
 2. Merge CLI values over config values and resolve recursive `import_projects`.
 3. Recreate `build_dir` and stage selected `.psc` files under `build_dir/src`.
-4. Run the dummy no-op preprocessor boundary over staged files unless disabled.
+4. Run the constellation preprocessor frontend over staged files unless disabled.
 5. Compile staged files rather than original source files.
-6. Mirror original source files to `copy_source_to` after successful compilation.
+6. Mirror transpiled staged source files to `copy_source_to` after successful compilation.
 7. Copy configured extras and plugin assets through `bgs_tools.constellation.packaging`.
 
 Constellation notes:
@@ -102,11 +102,12 @@ Constellation notes:
 - `build_dir` from config is honored unless `--build-dir` is explicitly provided.
 - `--filter` keeps the current exclusion behavior: matching paths are skipped.
 - Imported projects remain compiler import directories; they are not staged or preprocessed yet.
-- The dummy preprocessor does not transform source text in normal builds.
+- Constellation now performs staged-file rewriting in normal builds when supported directives are present.
 - The staged source root is added to the compiler import path so namespaced scripts compile correctly from `build_dir/src`.
 - Constellation was validated against `.dev/if_it_aint_broke` using the same `.dev/project.json` as legacy `bgbc.py`.
 - Stable parity signals matched between the two entry points: same relative output file set, same layout, same byte lengths, and matching hashes for deterministic copied outputs.
 - Raw `.pex` hashes are not a reliable byte-for-byte parity signal because repeated legacy builds also produce different `.pex` hashes.
+- Source mirroring through `copy_source_to` copies the post-transpile staged source file, not the original authoring source.
 
 ## Config Model
 
@@ -154,7 +155,7 @@ Additional current detail:
 The boundary lines are:
 
 - config owns argument parsing, config loading/saving, config merging, output directory validation, and recursive import project resolution.
-- preprocessor owns staged-file preprocessing hooks and debug metadata.
+- preprocessor owns staged-file preprocessing hooks, Tree-sitter parser integration, normalized AST lifting, transform passes, emission, and debug metadata.
 - compile owns file discovery, filter semantics, source staging, and compiler subprocess execution.
 - packaging owns source mirroring, extras copying, and flat asset copying.
 
@@ -163,7 +164,8 @@ Current state of those boundaries:
 - config is implemented and used by the constellation entry point.
 - compile is implemented, including staged source copying under `build_dir/src`.
 - packaging is implemented for source mirroring, extras, and assets.
-- preprocessor is currently a dummy/no-op boundary in normal builds, with legacy parser metadata still available for debug-style use.
+- preprocessor now runs a compiler-shaped pipeline in normal builds: Tree-sitter parse adapter, normalized AST lift, transform passes, and emitter.
+- helper-file output is represented in emitted-file metadata even though the first implemented transform still emits only the primary staged file.
 
 ### Compiler Layer
 
@@ -206,12 +208,17 @@ This subsystem is only partially realized.
 - The richer macro/include workflow appears incomplete relative to the intended design.
 - Be careful not to overstate support for macro features unless you have validated them.
 
-Constellation currently provides a dummy preprocessor package at `src/python/bgs_tools/constellation/preprocessor/`.
+Constellation currently provides the active staged-tree preprocessor frontend at `src/python/bgs_tools/constellation/preprocessor/`.
 
-- Normal constellation builds leave staged source files unchanged.
-- `--debug-preprocessor` can still use the legacy parser metadata path when available.
-- The staged-tree boundary is ready for future transforms, but macro expansion and source rewriting are not implemented yet.
-- Future preprocessing work should land in the constellation staged-tree flow first unless a task explicitly targets the legacy path.
+The intended frontend shape is Tree-sitter CST -> normalized AST -> transform passes -> emitter. The current implementation includes a dependency-soft Tree-sitter adapter: it records parser availability metadata when `tree_sitter` and a Papyrus language module are installed, and it continues to run the current transforms when they are not installed.
+
+- Supported directive: `$LinkQuest(PLUGIN_FILE, QUEST_ID)`.
+- The directive is lifted into the normalized AST, removed from the emitted staged file, and a generated global `GetSelf()` function is appended to the end of the staged file.
+- The generated return type and cast are derived directly from the file's declared `ScriptName`.
+- The directive's first argument supplies the plugin filename used in the generated `Game.GetFormFromFile(...)` call.
+- Only one `$LinkQuest(...)` directive is supported per file in the current implementation.
+- `copy_source_to` mirrors the emitted staged file, so mirrored source contains generated Papyrus rather than the original directive syntax.
+- Future preprocessing work should continue to land in the constellation staged-tree flow first unless a task explicitly targets the legacy path.
 
 ## Includes And Namespace Rewriting
 
@@ -245,7 +252,9 @@ Treat this as unfinished behavior unless you are explicitly restoring or redesig
 - The git handler has side effects both at import time and during normal builds.
 - Some defaults still reflect older Caprica-era assumptions even when the configured compiler is the Creation Kit Papyrus compiler.
 - Interactive directory prompts in `verify_or_create_directory()` can make automation awkward.
-- The preprocessor is present, but its implemented capabilities lag behind the apparent intended macro system.
+- The preprocessor frontend is present, but the Papyrus grammar is not complete yet.
+- The constellation preprocessor has Tree-sitter integration points, but this repository does not yet ship a compiled Papyrus Tree-sitter grammar module.
+- `$LinkQuest(...)` is now represented through the normalized frontend pipeline, but its directive recognition is still intentionally narrow while the real Papyrus grammar grows.
 - The Papyrus compiler does not appear to emit deterministic `.pex` binaries across repeated identical builds, so parity validation should compare stable output shape and copied-file results rather than raw `.pex` hashes alone.
 
 ## Guidance For Copilot When Editing This Project
@@ -260,6 +269,7 @@ Treat this as unfinished behavior unless you are explicitly restoring or redesig
 - For new work on the replacement CLI, prefer `bgs_tools.constellation` over expanding the legacy `bgbc.py` monolith unless the task explicitly targets legacy behavior.
 - When validating replacement behavior, use the same project root and same `.dev/project.json` for both entry points whenever practical.
 - When comparing compiled outputs, do not assume `.pex` hashes are stable across runs.
+- When testing new preprocessing features, prefer a copied fixture project so real source files can be modified without touching the original fixture.
 
 ## Update Triggers
 

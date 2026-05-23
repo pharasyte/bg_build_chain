@@ -1,0 +1,2 @@
+ply>=3.11
+tree-sitter>=0.22
